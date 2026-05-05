@@ -33,6 +33,19 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# firebase native/mobile config (not used by this web app)
+google-services.json
+
+# source logo file (we ship /public/logo.png instead)
+logo vp.png
+
+# local sqlite
+/prisma/dev.db
+/prisma/dev.db-journal
+
+# local file storage
+/storage/
+
 # vercel
 .vercel
 

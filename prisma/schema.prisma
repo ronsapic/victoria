@@ -1,0 +1,642 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  firebaseUid String   @unique
+  email       String
+  displayName String?
+  role        String   @default("resident")
+  phone       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  unitMemberships UnitMembership[]
+
+  decisionApprovals DecisionApproval[]
+  agreementSignings AgreementSigning[]
+  expenseApprovals  ExpenseApproval[]
+  residentProfile   ResidentProfile?
+  uploadedFiles     StoredFile[]
+  complaints        Complaint[]
+}
+
+model Unit {
+  id                 String              @id @default(cuid())
+  number             String
+  floor              Int
+  sizeSqm            Float?
+  ownershipSharePct  Float               @default(100)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  memberships        UnitMembership[]
+  incidents          Incident[]
+  maintenanceTickets MaintenanceTicket[]
+  invoices           Invoice[]
+  waterReadings      WaterReading[]
+  waterBills         WaterBill[]
+  votes              Vote[]
+
+  parkingAssignments   ParkingAssignment[]
+  complaints           Complaint[]
+  maintenanceSchedules MaintenanceSchedule[]
+}
+
+model UnitMembership {
+  id        String    @id @default(cuid())
+  unitId    String
+  unit      Unit      @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      String // OWNER | TENANT
+  startDate DateTime  @default(now())
+  endDate   DateTime?
+
+  @@unique([unitId, userId, kind, startDate])
+  @@index([unitId])
+  @@index([userId])
+}
+
+model Incident {
+  id          String               @id @default(cuid())
+  unitId      String?
+  unit        Unit?                @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  title       String
+  description String
+  category    String
+  status      String
+  assignee    String?
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  comments    IncidentComment[]
+  attachments IncidentAttachment[]
+}
+
+model IncidentComment {
+  id         String   @id @default(cuid())
+  incidentId String
+  incident   Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  body       String
+  authorRole String   @default("resident")
+  createdAt  DateTime @default(now())
+}
+
+model MaintenanceTicket {
+  id           String    @id @default(cuid())
+  unitId       String?
+  unit         Unit?     @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  assetId      String?
+  asset        Asset?    @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  title        String
+  description  String
+  status       String
+  costEstimate Float?
+  costActual   Float?
+  contractor   String?
+  completedAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model MaintenanceSchedule {
+  id           String   @id @default(cuid())
+  title        String
+  description  String   @default("")
+  intervalDays Int
+  nextRunAt    DateTime
+  active       Boolean  @default(true)
+  unitId       String?
+  unit         Unit?    @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  assetId      String?
+  asset        Asset?   @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  assignee     String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([active, nextRunAt])
+  @@index([unitId])
+  @@index([assetId])
+}
+
+model Invoice {
+  id          String   @id @default(cuid())
+  unitId      String
+  unit        Unit     @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  periodLabel String
+  amount      Float
+  status      String
+  dueDate     DateTime
+  createdAt   DateTime @default(now())
+
+  payments Payment[]
+}
+
+model Payment {
+  id         String   @id @default(cuid())
+  invoiceId  String
+  invoice    Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  amount     Float
+  method     String // MOBILE_MONEY | BANK | CASH | ADJUSTMENT
+  reference  String?
+  receivedAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  @@index([invoiceId])
+}
+
+model ReminderJob {
+  id        String    @id @default(cuid())
+  unitId    String
+  channel   String // EMAIL | SMS
+  template  String // SERVICE_CHARGE_REMINDER
+  payload   Json
+  status    String    @default("PENDING") // PENDING | SENT | FAILED
+  createdAt DateTime  @default(now())
+  sentAt    DateTime?
+
+  @@index([unitId])
+  @@index([status])
+}
+
+// --- Smart automation / scheduling ---
+model AutomationJob {
+  id        String   @id @default(cuid())
+  kind      String // MONTHLY_INVOICES | REMINDERS | AUTO_CLOSE | ESCALATE | RECURRING_MAINTENANCE
+  runAt     DateTime
+  status    String   @default("PENDING") // PENDING | RUNNING | DONE | FAILED
+  payload   Json?
+  lastError String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, runAt])
+}
+
+// --- Legal & compliance ---
+model ComplianceDocument {
+  id        String   @id @default(cuid())
+  title     String
+  category  String // BYLAWS | CONSTITUTION | POLICY | CONTRACT | OTHER
+  reference String? // storage key / URL
+  notes     String?
+  createdAt DateTime @default(now())
+}
+
+model ComplianceDeadline {
+  id          String   @id @default(cuid())
+  title       String
+  description String   @default("")
+  dueDate     DateTime
+  status      String   @default("OPEN") // OPEN | DONE
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Decision {
+  id        String             @id @default(cuid())
+  title     String
+  summary   String             @default("")
+  createdAt DateTime           @default(now())
+  approvals DecisionApproval[]
+}
+
+model DecisionApproval {
+  id         String   @id @default(cuid())
+  decisionId String
+  decision   Decision @relation(fields: [decisionId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  approvedAt DateTime @default(now())
+
+  @@unique([decisionId, userId])
+}
+
+model Agreement {
+  id        String             @id @default(cuid())
+  title     String
+  body      String
+  createdAt DateTime           @default(now())
+  signings  AgreementSigning[]
+}
+
+model AgreementSigning {
+  id          String    @id @default(cuid())
+  agreementId String
+  agreement   Agreement @relation(fields: [agreementId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  signedAt    DateTime  @default(now())
+  signature   String? // typed name or captured token
+
+  @@unique([agreementId, userId])
+}
+
+// --- Procurement / vendors ---
+model Vendor {
+  id        String           @id @default(cuid())
+  name      String
+  category  String // CLEANING | SECURITY | REPAIRS | UTILITIES | OTHER
+  phone     String?
+  email     String?
+  notes     String?
+  active    Boolean          @default(true)
+  createdAt DateTime         @default(now())
+  contracts VendorContract[]
+  quotes    VendorQuote[]
+  ratings   VendorRating[]
+}
+
+model VendorContract {
+  id        String    @id @default(cuid())
+  vendorId  String
+  vendor    Vendor    @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  title     String
+  reference String? // file key / URL
+  startsAt  DateTime?
+  endsAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([vendorId])
+}
+
+model VendorQuote {
+  id        String   @id @default(cuid())
+  vendorId  String
+  vendor    Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  title     String
+  amount    Float
+  status    String   @default("SUBMITTED") // SUBMITTED | APPROVED | REJECTED
+  reference String?
+  createdAt DateTime @default(now())
+
+  @@index([vendorId])
+  @@index([status])
+}
+
+model VendorRating {
+  id        String   @id @default(cuid())
+  vendorId  String
+  vendor    Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  score     Int
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@index([vendorId])
+}
+
+model ExpenseApproval {
+  id         String   @id @default(cuid())
+  expenseId  String
+  approverId String
+  approver   User     @relation(fields: [approverId], references: [id], onDelete: Cascade)
+  status     String   @default("APPROVED") // APPROVED | REJECTED
+  note       String?
+  createdAt  DateTime @default(now())
+
+  @@index([expenseId])
+}
+
+// --- Advanced budgeting ---
+model BudgetYear {
+  id        String             @id @default(cuid())
+  year      Int                @unique
+  createdAt DateTime           @default(now())
+  depts     BudgetDepartment[]
+}
+
+model BudgetDepartment {
+  id           String       @id @default(cuid())
+  budgetYearId String
+  budgetYear   BudgetYear   @relation(fields: [budgetYearId], references: [id], onDelete: Cascade)
+  name         String // SECURITY | MAINTENANCE | UTILITIES | OTHER
+  createdAt    DateTime     @default(now())
+  lines        BudgetLine[]
+
+  @@unique([budgetYearId, name])
+}
+
+model BudgetLine {
+  id           String           @id @default(cuid())
+  departmentId String
+  department   BudgetDepartment @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  title        String
+  planned      Float
+  createdAt    DateTime         @default(now())
+
+  @@index([departmentId])
+}
+
+// --- Resident profile upgrade ---
+model ResidentProfile {
+  id         String             @id @default(cuid())
+  userId     String             @unique
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contactAlt String?
+  notes      String?
+  createdAt  DateTime           @default(now())
+  occupants  ResidentOccupant[]
+  vehicles   ResidentVehicle[]
+}
+
+model ResidentOccupant {
+  id        String          @id @default(cuid())
+  profileId String
+  profile   ResidentProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  name      String
+  relation  String? // spouse, child, etc
+  createdAt DateTime        @default(now())
+
+  @@index([profileId])
+}
+
+model ResidentVehicle {
+  id        String          @id @default(cuid())
+  profileId String
+  profile   ResidentProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  plate     String
+  make      String?
+  color     String?
+  createdAt DateTime        @default(now())
+
+  @@unique([profileId, plate])
+  @@index([profileId])
+}
+
+// --- Parking management ---
+model ParkingSlot {
+  id          String              @id @default(cuid())
+  code        String              @unique
+  note        String?
+  active      Boolean             @default(true)
+  createdAt   DateTime            @default(now())
+  assignments ParkingAssignment[]
+  violations  ParkingViolation[]
+}
+
+model ParkingAssignment {
+  id           String      @id @default(cuid())
+  slotId       String
+  slot         ParkingSlot @relation(fields: [slotId], references: [id], onDelete: Cascade)
+  unitId       String?
+  unit         Unit?       @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  vehiclePlate String?
+  startDate    DateTime    @default(now())
+  endDate      DateTime?
+
+  @@index([slotId])
+  @@index([unitId])
+}
+
+model ParkingViolation {
+  id           String       @id @default(cuid())
+  slotId       String?
+  slot         ParkingSlot? @relation(fields: [slotId], references: [id], onDelete: SetNull)
+  vehiclePlate String
+  unitLabel    String?
+  note         String?
+  createdAt    DateTime     @default(now())
+
+  @@index([slotId])
+}
+
+model Expense {
+  id          String   @id @default(cuid())
+  category    String
+  amount      Float
+  description String
+  occurredAt  DateTime
+  createdAt   DateTime @default(now())
+}
+
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String
+  body      String
+  audience  String   @default("all")
+  createdAt DateTime @default(now())
+}
+
+model WaterReading {
+  id        String   @id @default(cuid())
+  unitId    String
+  unit      Unit     @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  readDate  DateTime
+  reading   Float
+  createdAt DateTime @default(now())
+}
+
+model WaterBill {
+  id            String   @id @default(cuid())
+  unitId        String
+  unit          Unit     @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  periodLabel   String
+  fromReadingId String?
+  toReadingId   String?
+  consumption   Float
+  ratePerUnit   Float
+  amount        Float
+  status        String   @default("PENDING") // PENDING | PAID
+  createdAt     DateTime @default(now())
+
+  @@unique([unitId, periodLabel])
+  @@index([unitId])
+  @@index([status])
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  action    String
+  entity    String
+  entityId  String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+}
+
+model Poll {
+  id          String       @id @default(cuid())
+  title       String
+  description String       @default("")
+  anonymous   Boolean      @default(false)
+  weighted    Boolean      @default(false)
+  closed      Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  options     PollOption[]
+  votes       Vote[]
+}
+
+model PollOption {
+  id     String @id @default(cuid())
+  pollId String
+  poll   Poll   @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  label  String
+  votes  Vote[]
+}
+
+model Vote {
+  id       String     @id @default(cuid())
+  pollId   String
+  poll     Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  optionId String
+  option   PollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  unitId   String
+  unit     Unit       @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  @@unique([pollId, unitId])
+}
+
+model StaffMember {
+  id        String   @id @default(cuid())
+  name      String
+  role      String
+  phone     String?
+  email     String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model Asset {
+  id                   String                @id @default(cuid())
+  name                 String
+  category             String
+  conditionNote        String?
+  lastServiceAt        DateTime?
+  createdAt            DateTime              @default(now())
+  maintenanceTickets   MaintenanceTicket[]
+  maintenanceSchedules MaintenanceSchedule[]
+}
+
+model VisitorEntry {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String
+  unitVisit String
+  unitId    String?
+  notes     String?
+  visitedAt DateTime @default(now())
+}
+
+model EmergencyContact {
+  id       String @id @default(cuid())
+  label    String
+  phone    String
+  priority Int    @default(0)
+}
+
+model Letter {
+  id        String   @id @default(cuid())
+  title     String
+  body      String
+  scope     String
+  createdAt DateTime @default(now())
+}
+
+model DocumentMeta {
+  id        String   @id @default(cuid())
+  title     String
+  category  String
+  reference String?
+  notes     String?
+  createdAt DateTime @default(now())
+}
+
+model DocumentEntry {
+  id         String     @id @default(cuid())
+  title      String
+  category   String
+  visibility String     @default("PRIVATE") // PRIVATE | RESIDENTS
+  fileId     String
+  file       StoredFile @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  createdAt  DateTime   @default(now())
+
+  @@unique([fileId])
+  @@index([category])
+  @@index([visibility])
+}
+
+model StoredFile {
+  id           String   @id @default(cuid())
+  originalName String
+  mimeType     String
+  sizeBytes    Int
+  sha256       String?
+  storagePath  String   @unique
+  visibility   String   @default("PRIVATE") // PRIVATE | RESIDENTS
+  category     String   @default("GENERAL")
+  uploadedById String?
+  uploadedBy   User?    @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+  createdAt    DateTime @default(now())
+
+  incidentLinks IncidentAttachment[]
+  documentEntry DocumentEntry?
+
+  @@index([visibility])
+  @@index([category])
+  @@index([uploadedById])
+}
+
+model IncidentAttachment {
+  id         String     @id @default(cuid())
+  incidentId String
+  incident   Incident   @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  fileId     String
+  file       StoredFile @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  createdAt  DateTime   @default(now())
+
+  @@unique([incidentId, fileId])
+  @@index([incidentId])
+}
+
+model Complaint {
+  id          String             @id @default(cuid())
+  unitId      String?
+  unit        Unit?              @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  createdById String?
+  createdBy   User?              @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  title       String
+  body        String
+  status      String             @default("OPEN") // OPEN | IN_PROGRESS | RESOLVED | CLOSED
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  comments    ComplaintComment[]
+
+  @@index([status])
+  @@index([unitId])
+}
+
+model ComplaintComment {
+  id          String    @id @default(cuid())
+  complaintId String
+  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  authorRole  String    @default("resident")
+  body        String
+  createdAt   DateTime  @default(now())
+
+  @@index([complaintId])
+}
+
+model Booking {
+  id        String   @id @default(cuid())
+  resource  String
+  startsAt  DateTime
+  endsAt    DateTime
+  unitLabel String?
+  status    String   @default("PENDING")
+  notes     String?
+  createdAt DateTime @default(now())
+}
+
+model Project {
+  id           String   @id @default(cuid())
+  name         String
+  description  String   @default("")
+  status       String
+  timelineNote String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}

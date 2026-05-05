@@ -1,7 +1,7 @@
 import "server-only";
 
 import { cache } from "react";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 
 import type { UserRole } from "@/lib/rbac";
 import { USER_ROLES } from "@/lib/rbac";
@@ -23,17 +23,41 @@ function parseRole(r: string): UserRole {
   return USER_ROLES.includes(r as UserRole) ? (r as UserRole) : "resident";
 }
 
-async function readSession(): Promise<AuthUser | null> {
+async function resolveFirebaseUid(): Promise<string | null> {
+  const hdrs = await headers();
+  const authorization = hdrs.get("authorization")?.trim();
+
+  if (authorization?.toLowerCase().startsWith("bearer ")) {
+    const idToken = authorization.slice(7).trim();
+    if (!idToken) return null;
+
+    try {
+      const decoded = await getAdminAuth().verifyIdToken(idToken);
+      return decoded.uid;
+    } catch {
+      return null;
+    }
+  }
+
   const cookieStore = await cookies();
   const session = cookieStore.get(SESSION_COOKIE_NAME)?.value;
   if (!session) return null;
 
   try {
-    const admin = getAdminAuth();
-    const decoded = await admin.verifySessionCookie(session, true);
+    const decoded = await getAdminAuth().verifySessionCookie(session, true);
+    return decoded.uid;
+  } catch {
+    return null;
+  }
+}
 
+async function readSession(): Promise<AuthUser | null> {
+  const firebaseUid = await resolveFirebaseUid();
+  if (!firebaseUid) return null;
+
+  try {
     const row = await prisma.user.findUnique({
-      where: { firebaseUid: decoded.uid },
+      where: { firebaseUid },
     });
 
     if (!row) return null;

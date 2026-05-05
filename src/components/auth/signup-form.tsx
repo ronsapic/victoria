@@ -29,7 +29,7 @@ export function SignupForm() {
         return;
       }
       const cred = await createUserWithEmailAndPassword(
-        getFirebaseAuth(),
+        await getFirebaseAuth(),
         email,
         password,
       );

@@ -21,7 +21,7 @@ export function ForgotPasswordForm() {
     setPending(true);
     try {
       const email = String(formData.get("email") ?? "").trim();
-      await sendPasswordResetEmail(getFirebaseAuth(), email);
+      await sendPasswordResetEmail(await getFirebaseAuth(), email);
       setSent(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Request failed");

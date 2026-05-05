@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { firebaseAuthFetch } from "@/lib/auth/firebase-auth-fetch";
 import { btnGhostClass, btnPrimaryClass, inputClass, labelClass } from "@/components/form-styles";
 
 export function UploadWidget({
@@ -24,7 +25,7 @@ export function UploadWidget({
     try {
       formData.set("category", category);
       formData.set("visibility", visibility);
-      const res = await fetch("/api/files/upload", {
+      const res = await firebaseAuthFetch("/api/files/upload", {
         method: "POST",
         body: formData,
       });

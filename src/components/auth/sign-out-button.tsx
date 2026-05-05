@@ -4,6 +4,7 @@ import { signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { firebaseAuthFetch } from "@/lib/auth/firebase-auth-fetch";
 import { getFirebaseAuth } from "@/lib/firebase/client";
 import { btnGhostClass } from "@/components/form-styles";
 
@@ -14,8 +15,8 @@ export function SignOutButton() {
   async function onClick() {
     setBusy(true);
     try {
-      await fetch("/api/auth/session", { method: "DELETE" });
-      await signOut(getFirebaseAuth());
+      await firebaseAuthFetch("/api/auth/session", { method: "DELETE" });
+      await signOut(await getFirebaseAuth());
       router.push("/login");
       router.refresh();
     } finally {

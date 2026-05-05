@@ -10,12 +10,24 @@ export const runtime = "nodejs";
 /** Session cookie lifetime (Firebase allows up to 14 days). */
 const SESSION_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 5;
 
+function idTokenFromRequest(req: Request, body: { idToken?: string }): string | null {
+  const auth = req.headers.get("authorization")?.trim();
+  if (auth?.toLowerCase().startsWith("bearer ")) {
+    const t = auth.slice(7).trim();
+    if (t) return t;
+  }
+  return body.idToken?.trim() || null;
+}
+
 export async function POST(req: Request) {
   try {
-    const body = (await req.json()) as { idToken?: string };
-    const idToken = body.idToken;
+    const body = (await req.json().catch(() => ({}))) as { idToken?: string };
+    const idToken = idTokenFromRequest(req, body);
     if (!idToken) {
-      return NextResponse.json({ error: "Missing idToken" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing idToken (use Authorization: Bearer or JSON body)" },
+        { status: 400 },
+      );
     }
 
     const admin = getAdminAuth();
@@ -42,17 +54,39 @@ export async function POST(req: Request) {
   }
 }
 
-export async function DELETE() {
+export async function DELETE(req: Request) {
+  const admin = getAdminAuth();
+  const uids = new Set<string>();
+
+  const authHeader = req.headers.get("authorization")?.trim();
+  if (authHeader?.toLowerCase().startsWith("bearer ")) {
+    const token = authHeader.slice(7).trim();
+    if (token) {
+      try {
+        const decoded = await admin.verifyIdToken(token);
+        uids.add(decoded.uid);
+      } catch {
+        /* invalid token */
+      }
+    }
+  }
+
   const jar = await cookies();
   const session = jar.get(SESSION_COOKIE_NAME)?.value;
-
   if (session) {
     try {
-      const admin = getAdminAuth();
       const decoded = await admin.verifySessionCookie(session, true);
-      await admin.revokeRefreshTokens(decoded.uid);
+      uids.add(decoded.uid);
     } catch {
       /* cookie may be expired */
+    }
+  }
+
+  for (const uid of uids) {
+    try {
+      await admin.revokeRefreshTokens(uid);
+    } catch {
+      /* ignore */
     }
   }
 

@@ -33,7 +33,7 @@ export function LoginForm() {
       const email = String(formData.get("email") ?? "").trim();
       const password = String(formData.get("password") ?? "");
       const cred = await signInWithEmailAndPassword(
-        getFirebaseAuth(),
+        await getFirebaseAuth(),
         email,
         password,
       );

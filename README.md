@@ -37,7 +37,7 @@ The default `API_BASE_URL` in `lib/config/api_config.dart` is for local/Android 
 ## App features (Flutter)
 
 - **Payments** — Resident receipts and staff receipt alerts.
-- **Community** — Announcements (`GET /api/announcements`) and document register (`/api/documents/entries`).
+- **Community** — Announcements (`GET /api/announcements`) and document register (`/api/documents/entries`) with **segment filters**, **version series** (reuse the same document key for history), and **Management** uploads restricted to **admin** (set `API_BASE_URL`, then in `legacy_next` run `npm install` and `npm run db:push` after pulling so `seriesKey` exists in SQLite).
 - **My unit** — Active memberships from `GET /api/units/me`.
 - **Safety** — Estate emergency list from `GET /api/emergency-contacts` with tap-to-call (`tel:`).
 

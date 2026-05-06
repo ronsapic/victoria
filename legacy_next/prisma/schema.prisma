@@ -546,17 +546,21 @@ model DocumentMeta {
 }
 
 model DocumentEntry {
-  id         String     @id @default(cuid())
-  title      String
-  category   String
-  visibility String     @default("PRIVATE") // PRIVATE | RESIDENTS
-  fileId     String
-  file       StoredFile @relation(fields: [fileId], references: [id], onDelete: Cascade)
-  createdAt  DateTime   @default(now())
+  id          String     @id @default(cuid())
+  title       String
+  category    String
+  visibility  String     @default("PRIVATE") // PRIVATE | RESIDENTS
+  /** Same key = one logical document line; newest first when listing history. */
+  seriesKey   String?
+  versionNote String?
+  fileId      String
+  file        StoredFile @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  createdAt   DateTime   @default(now())
 
   @@unique([fileId])
   @@index([category])
   @@index([visibility])
+  @@index([seriesKey])
 }
 
 model StoredFile {

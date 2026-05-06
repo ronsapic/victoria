@@ -157,18 +157,27 @@ class ApiService {
     required String title,
     required String category,
     required String visibility,
+    String? seriesKey,
+    String? versionNote,
   }) async {
     final headers = await _authHeaders();
     headers['Content-Type'] = 'application/json';
+    final payload = <String, dynamic>{
+      'fileId': fileId,
+      'title': title,
+      'category': category,
+      'visibility': visibility,
+    };
+    if (seriesKey != null && seriesKey.trim().isNotEmpty) {
+      payload['seriesKey'] = seriesKey.trim();
+    }
+    if (versionNote != null && versionNote.trim().isNotEmpty) {
+      payload['versionNote'] = versionNote.trim();
+    }
     final res = await _client.post(
       _uri('/api/documents/entries'),
       headers: headers,
-      body: jsonEncode({
-        'fileId': fileId,
-        'title': title,
-        'category': category,
-        'visibility': visibility,
-      }),
+      body: jsonEncode(payload),
     );
     final body = jsonDecode(res.body.isEmpty ? '{}' : res.body)
         as Map<String, dynamic>;
@@ -177,7 +186,7 @@ class ApiService {
     }
   }
 
-  Future<List<DocumentEntryDto>> listDocuments() async {
+  Future<DocumentCatalog> loadDocumentCatalog() async {
     final headers = await _authHeaders();
     final res = await _client.get(_uri('/api/documents/entries'), headers: headers);
     final body = jsonDecode(res.body.isEmpty ? '{}' : res.body)
@@ -185,10 +194,18 @@ class ApiService {
     if (res.statusCode < 200 || res.statusCode >= 300) {
       throw Exception(body['error']?.toString() ?? 'HTTP ${res.statusCode}');
     }
-    final list = body['entries'] as List<dynamic>? ?? [];
-    return list
-        .map((e) => DocumentEntryDto.fromJson(e as Map<String, dynamic>))
-        .toList();
+    final entryList = body['entries'] as List<dynamic>? ?? [];
+    final seriesList = body['series'] as List<dynamic>? ?? [];
+    final segList = body['segments'] as List<dynamic>? ?? [];
+    return DocumentCatalog(
+      entries: entryList
+          .map((e) => DocumentEntryDto.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      series: seriesList
+          .map((e) => DocumentSeriesDto.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      segments: segList.map((e) => e.toString()).toList(),
+    );
   }
 
   Future<List<ReceiptDto>> listMyReceipts() async {
@@ -306,6 +323,8 @@ class DocumentEntryDto {
     required this.visibility,
     required this.createdAt,
     required this.file,
+    this.seriesKey,
+    this.versionNote,
   });
 
   final String id;
@@ -313,6 +332,8 @@ class DocumentEntryDto {
   final String category;
   final String visibility;
   final String createdAt;
+  final String? seriesKey;
+  final String? versionNote;
   final DocumentFileDto file;
 
   static DocumentEntryDto fromJson(Map<String, dynamic> j) {
@@ -322,11 +343,51 @@ class DocumentEntryDto {
       category: j['category']?.toString() ?? '',
       visibility: j['visibility']?.toString() ?? '',
       createdAt: j['createdAt']?.toString() ?? '',
+      seriesKey: j['seriesKey']?.toString(),
+      versionNote: j['versionNote']?.toString(),
       file: DocumentFileDto.fromJson(
         (j['file'] as Map?)?.cast<String, dynamic>() ?? {},
       ),
     );
   }
+}
+
+class DocumentSeriesDto {
+  DocumentSeriesDto({
+    required this.seriesKey,
+    required this.category,
+    required this.displayTitle,
+    required this.versions,
+  });
+
+  final String seriesKey;
+  final String category;
+  final String displayTitle;
+  final List<DocumentEntryDto> versions;
+
+  static DocumentSeriesDto fromJson(Map<String, dynamic> j) {
+    final vs = j['versions'] as List<dynamic>? ?? [];
+    return DocumentSeriesDto(
+      seriesKey: j['seriesKey']?.toString() ?? '',
+      category: j['category']?.toString() ?? '',
+      displayTitle: j['displayTitle']?.toString() ?? '',
+      versions: vs
+          .map((e) => DocumentEntryDto.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+}
+
+class DocumentCatalog {
+  DocumentCatalog({
+    required this.entries,
+    required this.series,
+    required this.segments,
+  });
+
+  final List<DocumentEntryDto> entries;
+  final List<DocumentSeriesDto> series;
+  final List<String> segments;
 }
 
 class DocumentFileDto {

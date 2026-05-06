@@ -4,6 +4,8 @@ bool isCommitteeRole(String? role) {
   return role == 'admin' || role == 'auditor' || role == 'accountant';
 }
 
+bool isAdminRole(String? role) => role == 'admin';
+
 /// Roles that see `/api/activity/receipt-alerts` (admin, caretaker/staff, finance).
 bool seesReceiptUploadAlerts(String? role) {
   if (role == null) return false;

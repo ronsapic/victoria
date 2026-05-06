@@ -34,6 +34,13 @@ firebase deploy --only hosting
 
 The default `API_BASE_URL` in `lib/config/api_config.dart` is for local/Android emulator; production web **must** pass your deployed `legacy_next` API URL (no trailing slash). In the Firebase console, add your Hosting domain under **Authentication → Settings → Authorized domains**.
 
+## App features (Flutter)
+
+- **Payments** — Resident receipts and staff receipt alerts.
+- **Community** — Announcements (`GET /api/announcements`) and document register (`/api/documents/entries`).
+- **My unit** — Active memberships from `GET /api/units/me`.
+- **Safety** — Estate emergency list from `GET /api/emergency-contacts` with tap-to-call (`tel:`).
+
 ## Legacy (archived)
 
 The previous Next.js + Prisma implementation is preserved under `legacy_next/`.

@@ -251,6 +251,51 @@ class ApiService {
     }
     return res.bodyBytes;
   }
+
+  Future<List<AnnouncementDto>> listAnnouncements() async {
+    final headers = await _authHeaders();
+    final res = await _client.get(_uri('/api/announcements'), headers: headers);
+    final body = jsonDecode(res.body.isEmpty ? '{}' : res.body)
+        as Map<String, dynamic>;
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      throw Exception(body['error']?.toString() ?? 'HTTP ${res.statusCode}');
+    }
+    final list = body['announcements'] as List<dynamic>? ?? [];
+    return list
+        .map((e) => AnnouncementDto.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<List<EmergencyContactDto>> listEmergencyContacts() async {
+    final headers = await _authHeaders();
+    final res = await _client.get(
+      _uri('/api/emergency-contacts'),
+      headers: headers,
+    );
+    final body = jsonDecode(res.body.isEmpty ? '{}' : res.body)
+        as Map<String, dynamic>;
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      throw Exception(body['error']?.toString() ?? 'HTTP ${res.statusCode}');
+    }
+    final list = body['contacts'] as List<dynamic>? ?? [];
+    return list
+        .map((e) => EmergencyContactDto.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<List<UnitMembershipDto>> listMyUnits() async {
+    final headers = await _authHeaders();
+    final res = await _client.get(_uri('/api/units/me'), headers: headers);
+    final body = jsonDecode(res.body.isEmpty ? '{}' : res.body)
+        as Map<String, dynamic>;
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      throw Exception(body['error']?.toString() ?? 'HTTP ${res.statusCode}');
+    }
+    final list = body['memberships'] as List<dynamic>? ?? [];
+    return list
+        .map((e) => UnitMembershipDto.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
 }
 
 class DocumentEntryDto {
@@ -353,6 +398,109 @@ class ReceiptAlertDto {
       createdAt: j['createdAt']?.toString() ?? '',
       entityId: j['entityId']?.toString(),
       metadata: meta is Map ? meta.cast<String, dynamic>() : null,
+    );
+  }
+}
+
+class AnnouncementDto {
+  AnnouncementDto({
+    required this.id,
+    required this.title,
+    required this.body,
+    required this.audience,
+    required this.createdAt,
+  });
+
+  final String id;
+  final String title;
+  final String body;
+  final String audience;
+  final String createdAt;
+
+  static AnnouncementDto fromJson(Map<String, dynamic> j) {
+    return AnnouncementDto(
+      id: j['id']?.toString() ?? '',
+      title: j['title']?.toString() ?? '',
+      body: j['body']?.toString() ?? '',
+      audience: j['audience']?.toString() ?? '',
+      createdAt: j['createdAt']?.toString() ?? '',
+    );
+  }
+}
+
+class EmergencyContactDto {
+  EmergencyContactDto({
+    required this.id,
+    required this.label,
+    required this.phone,
+    required this.priority,
+  });
+
+  final String id;
+  final String label;
+  final String phone;
+  final int priority;
+
+  static EmergencyContactDto fromJson(Map<String, dynamic> j) {
+    return EmergencyContactDto(
+      id: j['id']?.toString() ?? '',
+      label: j['label']?.toString() ?? '',
+      phone: j['phone']?.toString() ?? '',
+      priority: (j['priority'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
+class UnitSummaryDto {
+  UnitSummaryDto({
+    required this.id,
+    required this.number,
+    required this.floor,
+    this.sizeSqm,
+    required this.ownershipSharePct,
+  });
+
+  final String id;
+  final String number;
+  final int floor;
+  final double? sizeSqm;
+  final double ownershipSharePct;
+
+  static UnitSummaryDto fromJson(Map<String, dynamic> j) {
+    return UnitSummaryDto(
+      id: j['id']?.toString() ?? '',
+      number: j['number']?.toString() ?? '',
+      floor: (j['floor'] as num?)?.toInt() ?? 0,
+      sizeSqm: (j['sizeSqm'] as num?)?.toDouble(),
+      ownershipSharePct: (j['ownershipSharePct'] as num?)?.toDouble() ?? 100,
+    );
+  }
+}
+
+class UnitMembershipDto {
+  UnitMembershipDto({
+    required this.id,
+    required this.kind,
+    required this.startDate,
+    required this.endDate,
+    required this.unit,
+  });
+
+  final String id;
+  final String kind;
+  final String startDate;
+  final String? endDate;
+  final UnitSummaryDto unit;
+
+  static UnitMembershipDto fromJson(Map<String, dynamic> j) {
+    return UnitMembershipDto(
+      id: j['id']?.toString() ?? '',
+      kind: j['kind']?.toString() ?? '',
+      startDate: j['startDate']?.toString() ?? '',
+      endDate: j['endDate']?.toString(),
+      unit: UnitSummaryDto.fromJson(
+        (j['unit'] as Map?)?.cast<String, dynamic>() ?? {},
+      ),
     );
   }
 }

@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../services/api_service.dart';
 import '../home_screen.dart';
-import 'notices_screen.dart';
+import 'community_screen.dart';
+import 'emergency_screen.dart';
 import 'payments_screen.dart';
 import 'unit_screen.dart';
 
@@ -53,13 +54,21 @@ class _AppShellState extends State<AppShell> {
         profileLoading: _profileLoading,
         onNavigate: _setIndex,
       ),
-      NoticesScreen(
+      CommunityScreen(
         api: widget.api,
         profile: _profile,
         profileLoading: _profileLoading,
         onNavigate: _setIndex,
       ),
-      UnitScreen(onNavigate: _setIndex),
+      UnitScreen(
+        api: widget.api,
+        profileLoading: _profileLoading,
+        onNavigate: _setIndex,
+      ),
+      EmergencyScreen(
+        api: widget.api,
+        onNavigate: _setIndex,
+      ),
     ];
 
     return Scaffold(
@@ -89,7 +98,7 @@ class _AppShellState extends State<AppShell> {
           NavigationDestination(
             icon: Icon(Icons.dashboard_outlined),
             selectedIcon: Icon(Icons.dashboard),
-            label: 'Dashboard',
+            label: 'Home',
           ),
           NavigationDestination(
             icon: Icon(Icons.receipt_long_outlined),
@@ -97,14 +106,19 @@ class _AppShellState extends State<AppShell> {
             label: 'Payments',
           ),
           NavigationDestination(
-            icon: Icon(Icons.campaign_outlined),
-            selectedIcon: Icon(Icons.campaign),
-            label: 'Notices',
+            icon: Icon(Icons.groups_outlined),
+            selectedIcon: Icon(Icons.groups),
+            label: 'Community',
           ),
           NavigationDestination(
             icon: Icon(Icons.apartment_outlined),
             selectedIcon: Icon(Icons.apartment),
             label: 'My Unit',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.health_and_safety_outlined),
+            selectedIcon: Icon(Icons.health_and_safety),
+            label: 'Safety',
           ),
         ],
       ),

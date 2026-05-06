@@ -37,6 +37,11 @@ yarn-error.log*
 # firebase native/mobile config (not used by this web app)
 google-services.json
 
+# firebase admin service account (never commit)
+firebase-admin.json
+*service-account*.json
+*firebase-adminsdk*.json
+
 # source logo file (we ship /public/logo.png instead)
 logo vp.png
 

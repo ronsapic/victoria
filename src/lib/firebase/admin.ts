@@ -1,5 +1,5 @@
 import "server-only";
-import { cert, getApps, initializeApp } from "firebase-admin/app";
+import { applicationDefault, cert, getApps, initializeApp } from "firebase-admin/app";
 import { getAuth, type Auth } from "firebase-admin/auth";
 
 let authInstance: Auth | undefined;
@@ -14,15 +14,27 @@ export function getAdminAuth(): Auth {
         /\\n/g,
         "\n",
       );
-      if (!projectId || !clientEmail || !privateKey) {
+
+      const hasExplicitCreds = !!(projectId && clientEmail && privateKey);
+      const hasAdc = !!process.env.GOOGLE_APPLICATION_CREDENTIALS;
+
+      if (hasExplicitCreds) {
+        initializeApp({
+          credential: cert({ projectId: projectId!, clientEmail: clientEmail!, privateKey: privateKey! }),
+          projectId,
+        });
+      } else if (hasAdc) {
+        // Uses the service account JSON pointed to by GOOGLE_APPLICATION_CREDENTIALS.
+        // This is often the easiest local setup on Windows.
+        initializeApp({
+          credential: applicationDefault(),
+          projectId: projectId,
+        });
+      } else {
         throw new Error(
-          "Firebase Admin is not configured. Set FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY.",
+          "Firebase Admin is not configured. Set FIREBASE_PROJECT_ID + FIREBASE_CLIENT_EMAIL + FIREBASE_PRIVATE_KEY, or set GOOGLE_APPLICATION_CREDENTIALS to a service account JSON file.",
         );
       }
-      initializeApp({
-        credential: cert({ projectId, clientEmail, privateKey }),
-        projectId,
-      });
     }
     authInstance = getAuth();
   }

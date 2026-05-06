@@ -14,15 +14,22 @@ let firebaseAppPromise: Promise<FirebaseApp> | null = null;
 
 async function fetchFirebaseOptions(): Promise<FirebaseOptions> {
   const res = await fetch("/api/firebase-config", { method: "GET" });
+  let options: FirebaseOptions & { error?: string };
+  try {
+    options = (await res.json()) as FirebaseOptions & { error?: string };
+  } catch {
+    throw new Error(
+      `Failed to load Firebase configuration (HTTP ${res.status}, invalid response).`,
+    );
+  }
+
   if (!res.ok) {
-    throw new Error("Failed to load Firebase configuration.");
+    throw new Error(
+      (typeof options.error === "string" && options.error) ||
+        `Failed to load Firebase configuration (HTTP ${res.status}).`,
+    );
   }
-  const options = (await res.json()) as FirebaseOptions & {
-    error?: string;
-  };
-  if ("error" in options && typeof options.error === "string") {
-    throw new Error(options.error);
-  }
+
   if (!options.apiKey || !options.projectId) {
     throw new Error("Invalid Firebase configuration.");
   }

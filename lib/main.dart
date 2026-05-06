@@ -3,8 +3,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
 import 'firebase_options.dart';
-import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/shell/app_shell.dart';
 import 'services/api_service.dart';
 
 Future<void> main() async {
@@ -44,7 +44,7 @@ class VictoriaPortalApp extends StatelessWidget {
             );
           }
           if (snapshot.hasData) {
-            return HomeScreen(api: ApiService());
+            return AppShell(api: ApiService());
           }
           return const LoginScreen();
         },

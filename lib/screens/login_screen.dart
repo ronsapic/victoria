@@ -1,8 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '../services/api_service.dart';
-import 'home_screen.dart';
 import '../widgets/fade_slide.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -36,13 +34,6 @@ class _LoginScreenState extends State<LoginScreen> {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: _email.text.trim(),
         password: _password.text,
-      );
-
-      if (!mounted) return;
-      await Navigator.of(context).pushReplacement(
-        MaterialPageRoute<void>(
-          builder: (_) => HomeScreen(api: ApiService()),
-        ),
       );
     } on FirebaseAuthException catch (e) {
       setState(() => _error = e.message ?? e.code);

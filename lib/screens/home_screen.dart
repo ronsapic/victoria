@@ -7,9 +7,10 @@ import 'login_screen.dart';
 import '../widgets/fade_slide.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key, required this.api});
+  const HomeScreen({super.key, required this.api, required this.onNavigate});
 
   final ApiService api;
+  final ValueChanged<int> onNavigate;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -119,6 +120,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               children: [
                                 _ActionGrid(
                                   onRefresh: _refresh,
+                                  onNavigate: widget.onNavigate,
                                 ),
                                 const SizedBox(height: 12),
                                 Card(
@@ -293,9 +295,10 @@ class _StatusRow extends StatelessWidget {
 }
 
 class _ActionGrid extends StatelessWidget {
-  const _ActionGrid({required this.onRefresh});
+  const _ActionGrid({required this.onRefresh, required this.onNavigate});
 
   final VoidCallback onRefresh;
+  final ValueChanged<int> onNavigate;
 
   @override
   Widget build(BuildContext context) {
@@ -313,21 +316,21 @@ class _ActionGrid extends StatelessWidget {
           title: 'Payments',
           subtitle: 'View charges & receipts',
           color: scheme.primary,
-          onTap: () {},
+          onTap: () => onNavigate(1),
         ),
         _ActionCard(
           icon: Icons.campaign_outlined,
           title: 'Notices',
           subtitle: 'Announcements & letters',
           color: scheme.tertiary,
-          onTap: () {},
+          onTap: () => onNavigate(2),
         ),
         _ActionCard(
           icon: Icons.apartment,
           title: 'My unit',
           subtitle: 'Membership & details',
           color: scheme.secondary,
-          onTap: () {},
+          onTap: () => onNavigate(3),
         ),
         _ActionCard(
           icon: Icons.refresh,

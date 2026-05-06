@@ -4,7 +4,9 @@ import path from "node:path";
 
 import { NextResponse } from "next/server";
 
+import { logActivity } from "@/lib/activity";
 import { getSessionUser } from "@/lib/auth/session";
+import { isCommitteeRole } from "@/lib/files/stored-file-access";
 import { prisma } from "@/lib/db";
 import { storedFilePath, storedFilesRoot } from "@/lib/storage/paths";
 
@@ -18,8 +20,25 @@ export async function POST(req: Request) {
 
   const form = await req.formData();
   const file = form.get("file");
-  const visibility = String(form.get("visibility") ?? "PRIVATE").toUpperCase();
-  const category = String(form.get("category") ?? "GENERAL").toUpperCase();
+  let visibility = String(form.get("visibility") ?? "PRIVATE").toUpperCase();
+  let category = String(form.get("category") ?? "GENERAL").toUpperCase();
+
+  if (category === "RECEIPT") {
+    if (user.role !== "resident") {
+      return NextResponse.json(
+        { error: "Only residents may upload payment receipts" },
+        { status: 403 },
+      );
+    }
+    visibility = "PRIVATE";
+  } else if (category === "DOCUMENT") {
+    if (!isCommitteeRole(user.role)) {
+      return NextResponse.json(
+        { error: "Only committee or finance roles may upload association documents" },
+        { status: 403 },
+      );
+    }
+  }
 
   if (!(file instanceof File)) {
     return NextResponse.json({ error: "Missing file" }, { status: 400 });
@@ -48,6 +67,20 @@ export async function POST(req: Request) {
       uploadedById: user.id,
     },
   });
+
+  if (category === "RECEIPT") {
+    await logActivity({
+      action: "receipt_uploaded",
+      entity: "stored_file",
+      entityId: row.id,
+      metadata: {
+        originalName: file.name,
+        uploadedByEmail: user.email,
+        uploadedById: user.id,
+        mimeType: file.type || "application/octet-stream",
+      },
+    });
+  }
 
   return NextResponse.json({ ok: true, fileId: row.id });
 }

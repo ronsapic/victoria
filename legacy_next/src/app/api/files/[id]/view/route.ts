@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { notFound } from "next/navigation";
 
 import { getSessionUser } from "@/lib/auth/session";
+import { canViewStoredFile } from "@/lib/files/stored-file-access";
 import { prisma } from "@/lib/db";
 import { storedFilePath } from "@/lib/storage/paths";
 
@@ -20,14 +21,7 @@ export async function GET(
   const f = await prisma.storedFile.findUnique({ where: { id } });
   if (!f) notFound();
 
-  const allowed =
-    f.visibility === "RESIDENTS" ||
-    user.role === "admin" ||
-    user.role === "auditor" ||
-    user.role === "accountant" ||
-    user.role === "staff";
-
-  if (!allowed) notFound();
+  if (!canViewStoredFile(user, f)) notFound();
 
   const buf = await fs.readFile(storedFilePath(f.storagePath));
   return new NextResponse(buf, {

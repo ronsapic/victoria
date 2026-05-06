@@ -14,6 +14,17 @@ flutter run
 - Android config: `android/app/google-services.json` (package: `com.victoria.portal`)
 - Web config is in `lib/firebase_options.dart`
 
+### Hosting (Flutter web)
+
+From the repo root, after `firebase login`:
+
+```bash
+flutter build web --release --dart-define=API_BASE_URL=https://YOUR-NEXT-API-HOST
+firebase deploy --only hosting
+```
+
+The default `API_BASE_URL` in `lib/config/api_config.dart` is for local/Android emulator; production web **must** pass your deployed `legacy_next` API URL (no trailing slash). In the Firebase console, add your Hosting domain under **Authentication → Settings → Authorized domains**.
+
 ## Legacy (archived)
 
 The previous Next.js + Prisma implementation is preserved under `legacy_next/`.

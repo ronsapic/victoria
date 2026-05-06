@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "408199402074",
+    "firebase_url": "https://victoria-place-portal-default-rtdb.firebaseio.com",
+    "project_id": "victoria-place-portal",
+    "storage_bucket": "victoria-place-portal.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:408199402074:android:c3901c81d9be7fc69f7e63",
+        "android_client_info": {
+          "package_name": "com.victoria.portal"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "408199402074-o743i6nble87filkqa6i0u78080heiub.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD7qMZSH6mq4kqm9bDSi6TerqpxuA_QUP0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "408199402074-o743i6nble87filkqa6i0u78080heiub.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

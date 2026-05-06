@@ -2,8 +2,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../config/api_config.dart';
+import '../config/roles.dart';
 import '../services/api_service.dart';
 import 'login_screen.dart';
+import 'profile_screen.dart';
 import '../widgets/fade_slide.dart';
 import '../widgets/vp_association_logo.dart';
 
@@ -68,6 +70,18 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Future<void> _openProfile() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => ProfileScreen(
+          api: widget.api,
+          onNavigateTab: widget.onNavigate,
+        ),
+      ),
+    );
+    if (mounted) _refresh();
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -82,6 +96,12 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         actions: [
           IconButton(
+            tooltip: 'Profile',
+            icon: const Icon(Icons.person_outline),
+            onPressed: _loading ? null : _openProfile,
+          ),
+          IconButton(
+            tooltip: 'Sign out',
             icon: const Icon(Icons.logout),
             onPressed: _signOut,
           ),
@@ -97,7 +117,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: _WelcomeCard(
                   email: _profile?['email']?.toString(),
                   role: _profile?['role']?.toString(),
+                  displayName: _profile?['displayName']?.toString(),
                   loading: _loading,
+                  onTap: _loading ? null : _openProfile,
                 ),
               ),
               const SizedBox(height: 12),
@@ -128,6 +150,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 _ActionGrid(
                                   onRefresh: _refresh,
                                   onNavigate: widget.onNavigate,
+                                  onOpenProfile: _openProfile,
                                 ),
                                 const SizedBox(height: 12),
                                 Card(
@@ -176,70 +199,98 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
+String _welcomeSubtitle(String? email, String? role, String? displayName) {
+  final name = displayName?.trim();
+  final r = roleDisplayLabel(role);
+  if (name != null && name.isNotEmpty) {
+    return '$name • $r';
+  }
+  return '${email ?? '—'} • $r';
+}
+
 class _WelcomeCard extends StatelessWidget {
-  const _WelcomeCard({this.email, this.role, required this.loading});
+  const _WelcomeCard({
+    this.email,
+    this.role,
+    this.displayName,
+    required this.loading,
+    this.onTap,
+  });
 
   final String? email;
   final String? role;
+  final String? displayName;
   final bool loading;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Card(
-      elevation: 0,
-      color: scheme.surface,
-      shape: RoundedRectangleBorder(
+    final interactive = onTap != null;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(24),
-        side: BorderSide(color: scheme.outlineVariant),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: scheme.primary.withValues(alpha: 0.14),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Icon(Icons.account_circle, color: scheme.primary),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Your account',
-                    style: Theme.of(context).textTheme.titleMedium,
+        child: Card(
+          elevation: 0,
+          margin: EdgeInsets.zero,
+          color: scheme.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+            side: BorderSide(color: scheme.outlineVariant),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: scheme.primary.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                  const SizedBox(height: 4),
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 220),
-                    child: loading
-                        ? Text(
-                            'Loading profile…',
-                            key: const ValueKey('loading'),
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(color: scheme.onSurfaceVariant),
-                          )
-                        : Text(
-                            '${email ?? '—'} • ${role ?? '—'}',
-                            key: const ValueKey('loaded'),
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(color: scheme.onSurfaceVariant),
-                          ),
+                  child: Icon(Icons.account_circle, color: scheme.primary),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        interactive ? 'Tap for full profile' : 'Your account',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 4),
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 220),
+                        child: loading
+                            ? Text(
+                                'Loading profile…',
+                                key: const ValueKey('loading'),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(color: scheme.onSurfaceVariant),
+                              )
+                            : Text(
+                                _welcomeSubtitle(email, role, displayName),
+                                key: const ValueKey('loaded'),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(color: scheme.onSurfaceVariant),
+                              ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                if (interactive)
+                  Icon(Icons.chevron_right, color: scheme.onSurfaceVariant),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -302,10 +353,15 @@ class _StatusRow extends StatelessWidget {
 }
 
 class _ActionGrid extends StatelessWidget {
-  const _ActionGrid({required this.onRefresh, required this.onNavigate});
+  const _ActionGrid({
+    required this.onRefresh,
+    required this.onNavigate,
+    required this.onOpenProfile,
+  });
 
   final VoidCallback onRefresh;
   final ValueChanged<int> onNavigate;
+  final Future<void> Function() onOpenProfile;
 
   @override
   Widget build(BuildContext context) {
@@ -345,6 +401,15 @@ class _ActionGrid extends StatelessWidget {
           subtitle: 'Dial safety contacts',
           color: Colors.deepOrange.shade700,
           onTap: () => onNavigate(4),
+        ),
+        _ActionCard(
+          icon: Icons.person_outline,
+          title: 'Profile',
+          subtitle: 'Role & account details',
+          color: scheme.tertiary,
+          onTap: () {
+            onOpenProfile();
+          },
         ),
         _ActionCard(
           icon: Icons.refresh,

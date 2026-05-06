@@ -11,3 +11,24 @@ bool seesReceiptUploadAlerts(String? role) {
 }
 
 bool isResident(String? role) => role == 'resident';
+
+bool isAuditorRole(String? role) => role == 'auditor';
+
+/// Human-readable label for [`/api/me`].role`.
+String roleDisplayLabel(String? role) {
+  switch (role) {
+    case 'admin':
+      return 'Admin (committee)';
+    case 'accountant':
+      return 'Accountant';
+    case 'resident':
+      return 'Resident';
+    case 'staff':
+      return 'Caretaker / staff';
+    case 'auditor':
+      return 'Auditor';
+    default:
+      return role?.isEmpty ?? true ? 'Unknown role' : role!;
+  }
+}
+

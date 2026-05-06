@@ -9,6 +9,15 @@ flutter pub get
 flutter run
 ```
 
+## Branding
+
+- Source logo file: **`logo vp.png`** (ignored in git — keep locally).
+- Shipped Flutter asset (tracked): **`assets/branding/association_logo.png`** — copied from `logo vp.png`; run:
+
+  `Copy-Item -LiteralPath "logo vp.png" -Destination "assets/branding\association_logo.png"` (PowerShell)
+
+  after replacing the logo, then `dart run flutter_launcher_icons`.
+
 ## Firebase
 
 - Android config: `android/app/google-services.json` (package: `com.victoria.portal`)

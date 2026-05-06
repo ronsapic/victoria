@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../widgets/fade_slide.dart';
+import '../widgets/vp_association_logo.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -76,7 +77,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       FadeSlide(
-                        child: _HeaderCard(primary: scheme.primary),
+                        child: const _AssociationHeader(),
                       ),
                       const SizedBox(height: 16),
                       FadeSlide(
@@ -184,10 +185,8 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-class _HeaderCard extends StatelessWidget {
-  const _HeaderCard({required this.primary});
-
-  final Color primary;
+class _AssociationHeader extends StatelessWidget {
+  const _AssociationHeader();
 
   @override
   Widget build(BuildContext context) {
@@ -200,43 +199,40 @@ class _HeaderCard extends StatelessWidget {
         side: BorderSide(color: scheme.outlineVariant),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Row(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             TweenAnimationBuilder<double>(
-              tween: Tween(begin: 0.85, end: 1),
+              tween: Tween(begin: 0.92, end: 1),
               duration: const Duration(milliseconds: 520),
               curve: Curves.elasticOut,
               builder: (context, s, child) => Transform.scale(scale: s, child: child),
-              child: Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: primary.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(16),
+              child: Center(
+                child: VpAssociationLogo(
+                  height: 88,
+                  width: 280,
+                  borderRadius: BorderRadius.circular(14),
+                  fit: BoxFit.contain,
                 ),
-                child: Icon(Icons.apartment_rounded, color: primary),
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Victoria Place Association',
-                    style: Theme.of(context).textTheme.titleMedium,
+            const SizedBox(height: 14),
+            Text(
+              'Victoria Place Association',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    letterSpacing: 0.5,
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Sign in to manage payments, notices, and resident services.',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(color: scheme.onSurfaceVariant),
-                  ),
-                ],
-              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Sign in for payments, documents, receipts, notices, and unit information.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: scheme.onSurfaceVariant),
             ),
           ],
         ),

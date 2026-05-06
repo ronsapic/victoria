@@ -5,6 +5,7 @@ import '../config/api_config.dart';
 import '../services/api_service.dart';
 import 'login_screen.dart';
 import '../widgets/fade_slide.dart';
+import '../widgets/vp_association_logo.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.api, required this.onNavigate});
@@ -72,7 +73,13 @@ class _HomeScreenState extends State<HomeScreen> {
     final scheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Victoria Place Association'),
+        titleSpacing: 12,
+        title: VpAssociationLogo(
+          height: 40,
+          width: 200,
+          fit: BoxFit.contain,
+          borderRadius: BorderRadius.circular(8),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),

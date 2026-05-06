@@ -26,7 +26,7 @@ export default async function DashboardPage() {
           Analytics dashboard
         </h2>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-          Aggregates mirror your Prisma datastore — gated figures respect your Firebase role mapping.
+          Overview of key activity and finance metrics for your access level.
         </p>
       </div>
 
@@ -105,7 +105,7 @@ export default async function DashboardPage() {
             Your access level
           </h3>
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            Signed in as <strong>{ROLE_LABELS[sessionUser.role]}</strong>. Navigation already mirrors this role set.
+            Signed in as <strong>{ROLE_LABELS[sessionUser.role]}</strong>.
           </p>
         </section>
       )}

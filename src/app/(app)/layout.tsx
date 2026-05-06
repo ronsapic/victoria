@@ -33,9 +33,6 @@ export default async function AppSectionLayout({
                 <h1 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
                   Victoria Place Association
                 </h1>
-                <p className="text-xs text-zinc-600 dark:text-zinc-400">
-                  Signed in with Firebase Authentication
-                </p>
               </div>
             </div>
             <AuthHeader
